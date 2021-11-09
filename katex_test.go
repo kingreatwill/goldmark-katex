@@ -17,6 +17,16 @@ type katexTestCase struct {
 	out string // expected output html
 }
 
+func TestKaTeX_One(t *testing.T) {
+	s := []byte("$")
+	print(s[0])
+	out, err := renderMarkdown([]byte(" $$\n1+2\n$$"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, `<p><span class="math display">\[1+2\]</span></p>`, strings.TrimSpace(string(out)))
+}
+
 func TestKaTeX(t *testing.T) {
 
 	tests := []katexTestCase{

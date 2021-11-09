@@ -57,11 +57,34 @@ func (b *mathJaxBlockParser) Continue(node ast.Node, reader text.Reader, pc pars
 		}
 	}
 
-	pos, padding := util.IndentPosition(line, 0, data.indent)
+	pos, padding := DedentPosition(line, 0, data.indent)
 	seg := text.NewSegmentPadding(segment.Start+pos, segment.Stop, padding)
 	node.Lines().Append(seg)
 	reader.AdvanceAndSetPadding(segment.Stop-segment.Start-pos-1, padding)
 	return parser.Continue | parser.NoChildren
+}
+
+// DedentPosition dedents lines by the given width.
+func DedentPosition(bs []byte, currentPos, width int) (pos, padding int) {
+	if width == 0 {
+		return 0, 0
+	}
+	w := 0
+	l := len(bs)
+	i := 0
+	for ; i < l; i++ {
+		if bs[i] == '\t' {
+			w += util.TabWidth(currentPos + w)
+		} else if bs[i] == ' ' {
+			w++
+		} else {
+			break
+		}
+	}
+	if w >= width {
+		return i, w - width
+	}
+	return i, 0
 }
 
 func (b *mathJaxBlockParser) Close(node ast.Node, reader text.Reader, pc parser.Context) {
