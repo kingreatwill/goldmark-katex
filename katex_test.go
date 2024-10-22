@@ -3,83 +3,21 @@ package katex
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"testing"
-
-	"github.com/yuin/goldmark"
-
-	"github.com/stretchr/testify/assert"
 )
 
-type katexTestCase struct {
-	d   string // test description
-	in  string // input markdown source
-	out string // expected output html
+func ExampleRender() {
+	b := bytes.Buffer{}
+	Render(&b, []byte(`Y = A \dot X^2 + B \dot X + C`), false)
+	fmt.Println(b.String())
+
+	// Output:
+	// <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>=</mo><mi>A</mi><msup><mover accent="true"><mi>X</mi><mo>˙</mo></mover><mn>2</mn></msup><mo>+</mo><mi>B</mi><mover accent="true"><mi>X</mi><mo>˙</mo></mover><mo>+</mo><mi>C</mi></mrow><annotation encoding="application/x-tex">Y = A \dot X^2 + B \dot X + C</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0035em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">A</span><span class="mord"><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9202em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">X</span></span><span style="top:-3.2523em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.0556em;"><span class="mord">˙</span></span></span></span></span></span></span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0035em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.05017em;">B</span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9202em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">X</span></span><span style="top:-3.2523em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.0556em;"><span class="mord">˙</span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span></span></span></span>
 }
 
-func TestKaTeX_One(t *testing.T) {
-	s := []byte("$")
-	print(s[0])
-	out, err := renderMarkdown([]byte(" $$\n1+2\n$$"))
-	if err != nil {
-		t.Fatal(err)
+func BenchmarkRender(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		b := bytes.Buffer{}
+		Render(&b, []byte(`Y = A \dot X^2 + B \dot X + C`), false)
 	}
-	assert.Equal(t, `<p><span class="math display">\[1+2\]</span></p>`, strings.TrimSpace(string(out)))
-}
-
-func TestKaTeX(t *testing.T) {
-
-	tests := []katexTestCase{
-		{
-			d:   "plain text",
-			in:  "foo",
-			out: `<p>foo</p>`,
-		},
-		{
-			d:   "bold",
-			in:  "**foo**",
-			out: `<p><strong>foo</strong></p>`,
-		},
-		{
-			d:   "math inline",
-			in:  "$1+2$",
-			out: `<p><span class="math inline">\(1+2\)</span></p>`,
-		},
-		{
-			d:  "math display",
-			in: "$$\n1+2\n$$",
-			out: `<p><span class="math display">\[1+2
-\]</span></p>`,
-		},
-		{
-			// this input previously triggered a panic in block.go
-			d:   "list-begin",
-			in:  "*foo\n  ",
-			out: "<p>*foo</p>",
-		},
-	}
-
-	for i, tc := range tests {
-		t.Run(fmt.Sprintf("%d: %s", i, tc.d), func(t *testing.T) {
-			out, err := renderMarkdown([]byte(tc.in))
-			if err != nil {
-				t.Fatal(err)
-			}
-			assert.Equal(t, tc.out, strings.TrimSpace(string(out)))
-		})
-	}
-
-}
-
-func renderMarkdown(src []byte) ([]byte, error) {
-	md := goldmark.New(
-		goldmark.WithExtensions(KaTeX),
-	)
-
-	var buf bytes.Buffer
-	if err := md.Convert(src, &buf); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
 }

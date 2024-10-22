@@ -1,81 +1,42 @@
 package katex
 
 import (
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer"
-	"github.com/yuin/goldmark/util"
+	_ "embed"
+	"io"
+	"runtime"
+
+	"github.com/lithdew/quickjs"
 )
 
-type katex struct {
-	inlineStartDelim string
-	inlineEndDelim   string
-	blockStartDelim  string
-	blockEndDelim    string
-}
+//go:embed katex.min.js
+var code string
 
-type Option interface {
-	SetOption(e *katex)
-}
+func Render(w io.Writer, src []byte, display bool) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
-type withInlineDelim struct {
-	start string
-	end   string
-}
+	runtime := quickjs.NewRuntime()
+	defer runtime.Free()
 
-type withBlockDelim struct {
-	start string
-	end   string
-}
+	context := runtime.NewContext()
+	defer context.Free()
 
-func WithInlineDelim(start string, end string) Option {
-	return &withInlineDelim{start, end}
-}
+	globals := context.Globals()
 
-func (o *withInlineDelim) SetOption(e *katex) {
-	e.inlineStartDelim = o.start
-	e.inlineEndDelim = o.end
-}
-
-func WithBlockDelim(start string, end string) Option {
-	return &withBlockDelim{start, end}
-}
-
-func (o *withBlockDelim) SetOption(e *katex) {
-	e.blockStartDelim = o.start
-	e.blockEndDelim = o.end
-}
-
-var KaTeX = &katex{
-	inlineStartDelim: `\(`,
-	inlineEndDelim:   `\)`,
-	blockStartDelim:  `\[`,
-	blockEndDelim:    `\]`,
-}
-
-func NewKaTeX(opts ...Option) *katex {
-	r := &katex{
-		inlineStartDelim: `\(`,
-		inlineEndDelim:   `\)`,
-		blockStartDelim:  `\[`,
-		blockEndDelim:    `\]`,
+	result, err := context.Eval(code)
+	if err != nil {
+		return err
 	}
+	defer result.Free()
 
-	for _, o := range opts {
-		o.SetOption(r)
+	globals.Set("_EqSrc3120", context.String(string(src)))
+	if display {
+		result, err = context.Eval("katex.renderToString(_EqSrc3120, { displayMode: true })")
+	} else {
+		result, err = context.Eval("katex.renderToString(_EqSrc3120)")
 	}
-	return r
-}
+	defer result.Free()
 
-func (e *katex) Extend(m goldmark.Markdown) {
-	m.Parser().AddOptions(parser.WithBlockParsers(
-		util.Prioritized(NewMathJaxBlockParser(), 701),
-	))
-	m.Parser().AddOptions(parser.WithInlineParsers(
-		util.Prioritized(NewInlineMathParser(), 501),
-	))
-	m.Renderer().AddOptions(renderer.WithNodeRenderers(
-		util.Prioritized(NewMathBlockRenderer(e.blockStartDelim, e.blockEndDelim), 501),
-		util.Prioritized(NewInlineMathRenderer(e.inlineStartDelim, e.inlineEndDelim), 502),
-	))
+	_, err = io.WriteString(w, result.String())
+	return err
 }

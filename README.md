@@ -1,63 +1,55 @@
-# goldmark-katex
+# Goldmark Katex
 
 
-Copy for [goldmark-mathjax](https://github.com/litao91/goldmark-mathjax).
-Used by [mdserver](https://github.com/kingreatwill/mdserver).
-
-## Installation
-
-
-```
-go get github.com/kingreatwill/goldmark-katex
-```
+Goldmark Katex is a [Goldmark](https://github.com/yuin/goldmark) extension providing math and equation support through [KaTeX](https://katex.org/).
 
 ## Usage
+github.com/kingreatwill/goldmark-katex/v2
 
-```go
-package main
-
-import (
-	"bytes"
-	"fmt"
-
-	katex "github.com/kingreatwill/goldmark-katex"
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer/html"
-)
-
-func main() {
-	md := goldmark.New(
-		goldmark.WithExtensions(katex.KaTeX),
-		goldmark.WithParserOptions(
-			parser.WithAutoHeadingID(),
-		),
-		goldmark.WithRendererOptions(
-			html.WithHardWraps(),
-			html.WithXHTML(),
-		),
-	)
-
-	// todo more control on the parsing process
-	var html bytes.Buffer
-	mdContent := []byte(`
-$$
-\mathbb{E}(X) = \int x d F(x) = \left\{ \begin{aligned} \sum_x x f(x) \; & \text{ if } X \text{ is discrete} 
-\\ \int x f(x) dx \; & \text{ if } X \text{ is continuous }
-\end{aligned} \right.
-$$
-
-
-Inline math $\frac{1}{2}$
-`)
-	if err := md.Convert(mdContent, &html); err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(html.String())
-}
+``` go
+goldmark.New(goldmark.WithExtensions(katex.KaTeX)).Convert(src, dst)
 ```
 
-License
---------------------
-MIT
+Wrap inline math with a pair of single `$`:
+
+```markdown
+$A$
+```
+
+Wrap block math with a pair of double `$`:
+
+```markdown
+$$
+A = \pi \times r^2
+$$
+```
+
+## Example
+
+<table>
+<tr>
+<td>
+
+```markdown
+Given the radius $r$ of a circle, the area $A$ is:
+
+$$
+A = \pi \times r^2
+$$
+
+And the circumference $C$ is:
+
+$$
+C = 2 \pi r
+$$
+```
+
+</td>
+<td>
+
+![](testdata/circle.png)
+
+</td>
+</tr>
+</table>
 
