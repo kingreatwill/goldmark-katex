@@ -33,7 +33,7 @@ func TestExtenderTestExtender(t *testing.T) {
 				want = want[bytes.Index(want, []byte("\n"))+1:]
 			}
 			got := bytes.Buffer{}
-			err = goldmark.New(goldmark.WithExtensions(&Extender{})).Convert(in, &got)
+			err = goldmark.New(goldmark.WithExtensions(KaTeX)).Convert(in, &got)
 			if err != nil {
 				t.Fatal(err)
 			}

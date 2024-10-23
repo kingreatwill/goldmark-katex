@@ -1,7 +1,6 @@
 package katex
 
 import (
-	"github.com/bluele/gcache"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer"
@@ -18,9 +17,6 @@ func (e *Extender) Extend(m goldmark.Markdown) {
 		util.Prioritized(&Parser{}, 0),
 	))
 	m.Renderer().AddOptions(renderer.WithNodeRenderers(
-		util.Prioritized(&HTMLRenderer{
-			cacheInline:  gcache.New(5000).ARC().Build(),
-			cacheDisplay: gcache.New(5000).ARC().Build(),
-		}, 0),
+		util.Prioritized(&HTMLRenderer{}, 0),
 	))
 }
